@@ -1,0 +1,8 @@
+TEST CASE CLEANSING REPORT
+=========================
+
+Total Test Cases: 3
+Similar Pairs Found: 0
+
+SIMILARITY REPORT:
+-----------------
