@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="35a6b057-89f1-4818-a093-d6a9da76cf54" name="Changes" comment="" />
+    <list default="true" id="35a6b057-89f1-4818-a093-d6a9da76cf54" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/testcleansing/TestCleansingApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/testcleansing/TestCleansingApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/testcleansing/service/CleansingEngine.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/testcleansing/service/CoverageScoringService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/testcleansing/service/CoverageScoringService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/testcleansing/service/SimilarityDetectionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/testcleansing/service/SimilarityDetectionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/testcleansing/service/TestStandard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/testcleansing/model/TestStandard.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/testcleansing/service/CleansingEngineTest.java" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,6 +24,9 @@
         <option value="Class" />
       </list>
     </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0,
@@ -32,8 +43,11 @@
     "Application.TestCleansingApplication.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Administrator/IdeaProjects/TestClean",
     "node.js.detected.package.eslint": "true",
@@ -92,7 +106,8 @@
       <updated>1777709401750</updated>
       <workItem from="1777709404299" duration="1119000" />
       <workItem from="1777710664149" duration="3276000" />
-      <workItem from="1778057716483" duration="7111000" />
+      <workItem from="1778057716483" duration="7932000" />
+      <workItem from="1778297354154" duration="15870000" />
     </task>
     <servers />
   </component>

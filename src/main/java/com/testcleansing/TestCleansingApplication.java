@@ -35,9 +35,6 @@ public class TestCleansingApplication {
                 case 3:
                     viewAllTestCases();
                     break;
-                case 4:
-                    viewStatistics();
-                    break;
                 case 5:
                     System.out.println("\n👋 Thank you for using Test Cleansing System!");
                     System.out.println("Exiting...\n");
@@ -60,7 +57,6 @@ public class TestCleansingApplication {
         System.out.println("║  │  1. 🚀 RUN CLEANSING ENGINE                        │   ║");
         System.out.println("║  │  2. ➕ ADD NEW TEST CASE                           │   ║");
         System.out.println("║  │  3. 📋 VIEW ALL TEST CASES                         │   ║");
-        System.out.println("║  │  4. 📊 VIEW STATISTICS                             │   ║");
         System.out.println("║  │  5. 🚪 EXIT                                        │   ║");
         System.out.println("║  └────────────────────────────────────────────────────┘   ║");
         System.out.println("╚════════════════════════════════════════════════════════════╝");
@@ -86,86 +82,8 @@ public class TestCleansingApplication {
         CleansingEngine.CleansingReport report = engine.runCleansing(testCases);
 
         // Display detailed results
-        displayCleansingResults(report);
-
-        // Ask if user wants to export results
-        System.out.print("\n📁 Do you want to export results to file? (y/n): ");
-        String export = scanner.nextLine().trim().toLowerCase();
-        if (export.equals("y") || export.equals("yes")) {
-            exportResultsToFile(report);
-        }
 
         waitForEnter();
-    }
-
-    private static void displayCleansingResults(CleansingEngine.CleansingReport report) {
-        System.out.println("\n╔════════════════════════════════════════════════════════════╗");
-        System.out.println("║                      CLEANSING RESULTS                      ║");
-        System.out.println("╚════════════════════════════════════════════════════════════╝");
-
-        // Summary
-        System.out.println("\n📋 SUMMARY:");
-        System.out.println("   ✅ Total Test Cases: " + report.normalizedCount);
-        System.out.println("   🔄 Similar Pairs Found: " + (report.similarities != null ? report.similarities.size() : 0));
-        System.out.println("   🔴 Duplicates (>90%): " + report.duplicatesFound);
-
-        // Similarity Report
-        if (report.similarities != null && !report.similarities.isEmpty()) {
-            System.out.println("\n🔍 SIMILARITY REPORT:");
-            System.out.println("   " + "─".repeat(55));
-
-            // Sort by similarity score
-            report.similarities.sort((a, b) -> Double.compare(b.getSimilarityScore(), a.getSimilarityScore()));
-
-            int count = Math.min(10, report.similarities.size());
-            for (int i = 0; i < count; i++) {
-                SimilarityResult r = report.similarities.get(i);
-                String icon = getSimilarityIcon(r.getSimilarityScore());
-                System.out.printf("   %s %s ↔ %s: %.1f%%%n",
-                        icon, r.getTestCase1().getId(), r.getTestCase2().getId(),
-                        r.getSimilarityScore() * 100);
-                System.out.printf("      📝 '%s'%n", truncateString(r.getTestCase1().getTitle(), 50));
-                System.out.printf("      📝 '%s'%n", truncateString(r.getTestCase2().getTitle(), 50));
-                System.out.println();
-            }
-        } else {
-            System.out.println("\n🔍 SIMILARITY REPORT:");
-            System.out.println("   ✅ No similar test cases found above threshold!");
-        }
-
-        // Test Categorization
-        if (report.categorized != null) {
-            System.out.println("\n🏷️  TEST CATEGORIZATION:");
-            System.out.println("   " + "─".repeat(55));
-
-            List<TestCase> smokeTests = report.categorized.getOrDefault(TestCoverageScore.TestType.SMOKE, new ArrayList<>());
-            System.out.printf("   🔥 SMOKE TESTS: %d test(s)%n", smokeTests.size());
-            for (TestCase tc : smokeTests) {
-                System.out.printf("      • %s: %s%n", tc.getId(), truncateString(tc.getTitle(), 60));
-            }
-
-            List<TestCase> regressionTests = report.categorized.getOrDefault(TestCoverageScore.TestType.REGRESSION, new ArrayList<>());
-            System.out.printf("\n   🔄 REGRESSION TESTS: %d test(s)%n", regressionTests.size());
-            for (TestCase tc : regressionTests) {
-                System.out.printf("      • %s: %s%n", tc.getId(), truncateString(tc.getTitle(), 60));
-            }
-
-            List<TestCase> sanityTests = report.categorized.getOrDefault(TestCoverageScore.TestType.SANITY, new ArrayList<>());
-            System.out.printf("\n   ✓ SANITY TESTS: %d test(s)%n", sanityTests.size());
-            for (TestCase tc : sanityTests) {
-                System.out.printf("      • %s: %s%n", tc.getId(), truncateString(tc.getTitle(), 60));
-            }
-        }
-
-        // Recommendations
-        System.out.println("\n💡 RECOMMENDATIONS:");
-        System.out.println("   " + "─".repeat(55));
-        List<String> recommendations = engine.getImprovementSuggestions(report);
-        for (String rec : recommendations) {
-            System.out.println("   • " + rec);
-        }
-
-        System.out.println("\n⏱️  Processing Time: " + report.processingTimeMs + " ms");
     }
 
     // ========== OPTION 2: ADD NEW TEST CASE (WITH VALIDATION) ==========
@@ -371,67 +289,6 @@ public class TestCleansingApplication {
 
     // ========== OPTION 4: VIEW STATISTICS ==========
 
-    private static void viewStatistics() {
-        System.out.println("\n╔════════════════════════════════════════════════════════════╗");
-        System.out.println("║                      SYSTEM STATISTICS                     ║");
-        System.out.println("╚════════════════════════════════════════════════════════════╝");
-
-        if (testCases.isEmpty()) {
-            System.out.println("\n⚠️  No test cases found!");
-            waitForEnter();
-            return;
-        }
-
-        // Run quick stats
-        CleansingEngine.CleansingReport report = engine.runCleansing(testCases);
-
-        System.out.println("\n📊 TEST CASE STATISTICS:");
-        System.out.println("   " + "─".repeat(40));
-        System.out.printf("   📝 Total Test Cases: %d%n", testCases.size());
-        System.out.printf("   🔥 Smoke Tests: %d%n",
-                report.categorized.getOrDefault(TestCoverageScore.TestType.SMOKE, new ArrayList<>()).size());
-        System.out.printf("   🔄 Regression Tests: %d%n",
-                report.categorized.getOrDefault(TestCoverageScore.TestType.REGRESSION, new ArrayList<>()).size());
-        System.out.printf("   ✓ Sanity Tests: %d%n",
-                report.categorized.getOrDefault(TestCoverageScore.TestType.SANITY, new ArrayList<>()).size());
-
-        // Priority distribution
-        System.out.println("\n📊 PRIORITY DISTRIBUTION:");
-        System.out.println("   " + "─".repeat(40));
-        long highCount = testCases.stream().filter(tc -> tc.getPriority() == TestCase.Priority.HIGH).count();
-        long mediumCount = testCases.stream().filter(tc -> tc.getPriority() == TestCase.Priority.MEDIUM).count();
-        long lowCount = testCases.stream().filter(tc -> tc.getPriority() == TestCase.Priority.LOW).count();
-
-        System.out.printf("   🔴 HIGH: %d (%.0f%%)%n", highCount, (double)highCount/testCases.size()*100);
-        System.out.printf("   🟡 MEDIUM: %d (%.0f%%)%n", mediumCount, (double)mediumCount/testCases.size()*100);
-        System.out.printf("   🟢 LOW: %d (%.0f%%)%n", lowCount, (double)lowCount/testCases.size()*100);
-
-        // Similarity stats
-        if (report.similarities != null && !report.similarities.isEmpty()) {
-            double avgSimilarity = report.similarities.stream()
-                    .mapToDouble(SimilarityResult::getSimilarityScore)
-                    .average()
-                    .orElse(0);
-
-            System.out.println("\n🔍 SIMILARITY STATISTICS:");
-            System.out.println("   " + "─".repeat(40));
-            System.out.printf("   🔄 Similar Pairs: %d%n", report.similarities.size());
-            System.out.printf("   📊 Average Similarity: %.1f%%%n", avgSimilarity * 100);
-        }
-
-        // Quality stats
-        double avgQuality = testCases.stream()
-                .mapToInt(tc -> engine.getQualityScore(tc))
-                .average()
-                .orElse(0);
-
-        System.out.println("\n⭐ QUALITY STATISTICS:");
-        System.out.println("   " + "─".repeat(40));
-        System.out.printf("   📊 Average Quality Score: %.1f/100%n", avgQuality);
-
-        waitForEnter();
-    }
-
     // ========== HELPER METHODS ==========
 
     private static void loadSampleTestCases() {
@@ -442,6 +299,11 @@ public class TestCleansingApplication {
     private static List<TestCase> createSampleTestCases() {
         List<TestCase> samples = new ArrayList<>();
 
+        // ============================================================
+        // SECTION 1: LOGIN TEST CASES (DUPLICATES & SIMILAR)
+        // ============================================================
+
+        // TC-001: Original Login Test
         samples.add(TestCase.builder()
                 .id("TC-001")
                 .title("Verify user can login with valid credentials")
@@ -456,8 +318,58 @@ public class TestCleansingApplication {
                 .executionCount(150)
                 .build());
 
+        // TC-002: DUPLICATE of TC-001 (almost identical - should be 90%+ similar)
         samples.add(TestCase.builder()
                 .id("TC-002")
+                .title("Verify user can login with valid credentials")  // SAME TITLE
+                .description("Test login functionality with valid username and password")  // SAME DESCRIPTION
+                .steps(Arrays.asList(
+                        "1. Navigate to login page",
+                        "2. Enter valid username",
+                        "3. Enter valid password",
+                        "4. Click login button"))
+                .expectedResult("User redirected to dashboard page")
+                .priority(TestCase.Priority.HIGH)
+                .executionCount(148)
+                .build());
+
+        // TC-003: Similar Login Test (different wording - should be 70-80% similar)
+        samples.add(TestCase.builder()
+                .id("TC-003")
+                .title("Check successful login using correct username/password")
+                .description("Login attempt with valid credentials should succeed")
+                .steps(Arrays.asList(
+                        "1. Go to login screen",
+                        "2. Type correct username",
+                        "3. Type correct password",
+                        "4. Press login button"))
+                .expectedResult("Successful login to the system dashboard")
+                .priority(TestCase.Priority.HIGH)
+                .executionCount(120)
+                .build());
+
+        // TC-004: Another similar login test
+        samples.add(TestCase.builder()
+                .id("TC-004")
+                .title("Login with valid credentials test")
+                .description("Verify that user can login using valid username and password")
+                .steps(Arrays.asList(
+                        "1. Open login page",
+                        "2. Input valid username",
+                        "3. Input valid password",
+                        "4. Hit submit"))
+                .expectedResult("User navigates to dashboard")
+                .priority(TestCase.Priority.HIGH)
+                .executionCount(130)
+                .build());
+
+        // ============================================================
+        // SECTION 2: PAYMENT TEST CASES (SIMILAR)
+        // ============================================================
+
+        // TC-005: Payment Test Original
+        samples.add(TestCase.builder()
+                .id("TC-005")
                 .title("Payment processing with credit card")
                 .description("Test credit card payment flow works correctly")
                 .steps(Arrays.asList(
@@ -470,8 +382,28 @@ public class TestCleansingApplication {
                 .executionCount(80)
                 .build());
 
+        // TC-006: Similar Payment Test
         samples.add(TestCase.builder()
-                .id("TC-003")
+                .id("TC-006")
+                .title("Credit card payment processing test")
+                .description("Verify credit card payment is processed correctly")
+                .steps(Arrays.asList(
+                        "1. Add products to cart",
+                        "2. Go to checkout page",
+                        "3. Fill credit card information",
+                        "4. Click pay now"))
+                .expectedResult("Order confirmation received, payment successful")
+                .priority(TestCase.Priority.HIGH)
+                .executionCount(75)
+                .build());
+
+        // ============================================================
+        // SECTION 3: LOGOUT TEST CASES (SIMILAR)
+        // ============================================================
+
+        // TC-007: Logout Test Original
+        samples.add(TestCase.builder()
+                .id("TC-007")
                 .title("User logout functionality")
                 .description("Test that logout button ends user session")
                 .steps(Arrays.asList(
@@ -483,8 +415,27 @@ public class TestCleansingApplication {
                 .executionCount(45)
                 .build());
 
+        // TC-008: Similar Logout Test
         samples.add(TestCase.builder()
-                .id("TC-004")
+                .id("TC-008")
+                .title("Logout from application")
+                .description("Test that user can successfully logout from the system")
+                .steps(Arrays.asList(
+                        "1. User logs in first",
+                        "2. User clicks logout link",
+                        "3. Session should be terminated"))
+                .expectedResult("User redirected to login screen")
+                .priority(TestCase.Priority.MEDIUM)
+                .executionCount(40)
+                .build());
+
+        // ============================================================
+        // SECTION 4: SEARCH TEST CASES (SIMILAR)
+        // ============================================================
+
+        // TC-009: Search Test Original
+        samples.add(TestCase.builder()
+                .id("TC-009")
                 .title("Search product by name")
                 .description("Test search functionality returns correct results")
                 .steps(Arrays.asList(
@@ -494,6 +445,152 @@ public class TestCleansingApplication {
                 .expectedResult("Products matching search term are displayed")
                 .priority(TestCase.Priority.MEDIUM)
                 .executionCount(30)
+                .build());
+
+        // TC-010: Similar Search Test
+        samples.add(TestCase.builder()
+                .id("TC-010")
+                .title("Product search functionality verification")
+                .description("Verify search returns correct products when searching by name")
+                .steps(Arrays.asList(
+                        "1. Type product name in search field",
+                        "2. Click on search icon",
+                        "3. Check search results page"))
+                .expectedResult("Relevant products appear in search results")
+                .priority(TestCase.Priority.MEDIUM)
+                .executionCount(25)
+                .build());
+
+        // ============================================================
+        // SECTION 5: REGISTRATION TEST CASES (SIMILAR)
+        // ============================================================
+
+        // TC-011: Registration Test
+        samples.add(TestCase.builder()
+                .id("TC-011")
+                .title("New user registration with valid data")
+                .description("Register new account with valid email and password")
+                .steps(Arrays.asList(
+                        "1. Click register link",
+                        "2. Enter email address",
+                        "3. Create password",
+                        "4. Confirm password",
+                        "5. Submit form"))
+                .expectedResult("Registration successful, confirmation email sent")
+                .priority(TestCase.Priority.HIGH)
+                .executionCount(60)
+                .build());
+
+        // TC-012: Similar Registration Test
+        samples.add(TestCase.builder()
+                .id("TC-012")
+                .title("User signup with valid information")
+                .description("Create new user account using valid registration data")
+                .steps(Arrays.asList(
+                        "1. Navigate to signup page",
+                        "2. Provide email",
+                        "3. Set password",
+                        "4. Confirm password",
+                        "5. Click register"))
+                .expectedResult("Account created successfully, user can login")
+                .priority(TestCase.Priority.HIGH)
+                .executionCount(55)
+                .build());
+
+        // ============================================================
+        // SECTION 6: PASSWORD RESET TEST CASES (SIMILAR)
+        // ============================================================
+
+        // TC-013: Password Reset Test
+        samples.add(TestCase.builder()
+                .id("TC-013")
+                .title("Forgot password reset via email")
+                .description("User can reset password using forgot password link")
+                .steps(Arrays.asList(
+                        "1. Click forgot password link",
+                        "2. Enter registered email",
+                        "3. Click send reset link",
+                        "4. Check email"))
+                .expectedResult("Password reset email received with reset link")
+                .priority(TestCase.Priority.MEDIUM)
+                .executionCount(20)
+                .build());
+
+        // TC-014: Similar Password Reset Test
+        samples.add(TestCase.builder()
+                .id("TC-014")
+                .title("Password recovery functionality test")
+                .description("Test that users can recover password via email")
+                .steps(Arrays.asList(
+                        "1. Go to login page",
+                        "2. Click 'Forgot Password'",
+                        "3. Input email address",
+                        "4. Request password reset"))
+                .expectedResult("Reset password email is sent to user's inbox")
+                .priority(TestCase.Priority.MEDIUM)
+                .executionCount(18)
+                .build());
+
+        // ============================================================
+        // SECTION 7: DIFFERENT CATEGORY TESTS (SANITY/REGRESSION)
+        // ============================================================
+
+        // TC-015: SANITY TEST (Low priority, rarely executed)
+        samples.add(TestCase.builder()
+                .id("TC-015")
+                .title("Verify page title")
+                .description("Check that homepage title is correct")
+                .steps(Arrays.asList(
+                        "1. Open application",
+                        "2. Check browser title"))
+                .expectedResult("Title matches expected value")
+                .priority(TestCase.Priority.LOW)
+                .executionCount(5)
+                .build());
+
+        // TC-016: SANITY TEST (Low priority, rarely executed)
+        samples.add(TestCase.builder()
+                .id("TC-016")
+                .title("Check footer links")
+                .description("Verify all footer links are working")
+                .steps(Arrays.asList(
+                        "1. Scroll to bottom of page",
+                        "2. Click each footer link"))
+                .expectedResult("All links navigate to correct pages")
+                .priority(TestCase.Priority.LOW)
+                .executionCount(3)
+                .build());
+
+        // TC-017: SANITY TEST (Very low priority)
+        samples.add(TestCase.builder()
+                .id("TC-017")
+                .title("Logo display verification")
+                .description("Check company logo appears correctly")
+                .steps(Arrays.asList(
+                        "1. Load homepage",
+                        "2. Check logo visibility"))
+                .expectedResult("Logo is displayed properly")
+                .priority(TestCase.Priority.LOW)
+                .executionCount(2)
+                .build());
+
+        // ============================================================
+        // SECTION 8: UNIQUE TEST (No duplicates)
+        // ============================================================
+
+        // TC-018: Unique test - should have no similar matches
+        samples.add(TestCase.builder()
+                .id("TC-018")
+                .title("Export report to PDF")
+                .description("Test that user can export data report as PDF")
+                .steps(Arrays.asList(
+                        "1. Navigate to reports page",
+                        "2. Click export button",
+                        "3. Select PDF format",
+                        "4. Download file"))
+                .expectedResult("PDF file downloaded successfully")
+                .priority(TestCase.Priority.MEDIUM)
+                .executionCount(15)
                 .build());
 
         return samples;

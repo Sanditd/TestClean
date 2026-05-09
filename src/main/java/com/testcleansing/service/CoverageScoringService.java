@@ -14,7 +14,8 @@ public class CoverageScoringService {
     public TestCoverageScore calculateScore(TestCase testCase) {
         int priorityScore = testCase.getPriority().getWeight() * 3;
         int frequencyScore = calculateExecutionFrequencyScore(testCase) * 2;
-        int keywordScore = calculateKeywordDensityScore(testCase) * 2;
+
+        int keywordScore = calculateKeywordDensityScoreOptimized(testCase) * 2;
 
         double totalScore = priorityScore + frequencyScore + keywordScore;
 
@@ -58,12 +59,19 @@ public class CoverageScoringService {
         return 1;
     }
 
-    private int calculateKeywordDensityScore(TestCase testCase) {
-        String fullText = testCase.getFullText().toLowerCase();
-        int keywordCount = 0;
+    // OPTIMIZED VERSION - Uses already normalized text from TextAnalysisService
+    private int calculateKeywordDensityScoreOptimized(TestCase testCase) {
+        // Use the already normalized text instead of re-processing!
+        String normalizedText = testCase.getNormalizedText();
 
+        // If normalized text doesn't exist (shouldn't happen if Step 1 ran)
+        if (normalizedText == null || normalizedText.isEmpty()) {
+            return 1; // Default fallback
+        }
+
+        int keywordCount = 0;
         for (String keyword : CRITICAL_KEYWORDS) {
-            if (fullText.contains(keyword)) {
+            if (normalizedText.contains(keyword)) {
                 keywordCount++;
             }
         }

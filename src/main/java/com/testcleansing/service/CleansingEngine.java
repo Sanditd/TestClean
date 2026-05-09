@@ -39,9 +39,7 @@ public class CleansingEngine {
         report.mergeSuggestions = similarityService.getMergeSuggestions(similarities);
 
         // Step 3: Standardize Test Cases (NEW!)
-        System.out.println("\n📋 Step 3: Standardizing test case structure");
-        runStandardizationCheck(analyzedCases);
-        List<TestCase> standardizedCases = standardizationService.standardizeBatch(analyzedCases);
+        List<TestCase> standardizedCases = analyzedCases; // Skip standardization
         report.standardizedCount = standardizedCases.size();
 
         // Step 4: Coverage Scoring
@@ -61,46 +59,7 @@ public class CleansingEngine {
     /**
      * Run complete standardization check
      */
-    public void runStandardizationCheck(List<TestCase> testCases) {
-        System.out.println("  🔧 Checking test cases against standard format...");
 
-        // First, standardize all test cases
-        List<TestCase> standardized = standardizationService.standardizeBatch(testCases);
-
-        // Generate compliance report
-        ComplianceReport report = standardizationService.generateComplianceReport(standardized);
-        report.print();
-
-        // Show detailed issues for non-compliant test cases
-        int issueCount = 0;
-        for (TestCase tc : standardized) {
-            StandardizationResult result = standardizationService.checkStandardFormat(tc);
-            if (!result.isValid() || !result.getWarnings().isEmpty()) {
-                if (issueCount == 0) {
-                    System.out.println("\n  📝 DETAILED ISSUES:");
-                }
-                issueCount++;
-                System.out.println("\n     " + issueCount + ". " + tc.getId() + ": " + tc.getTitle());
-
-                if (!result.isValid()) {
-                    System.out.println("        ❌ Violations:");
-                    for (String violation : result.getViolations()) {
-                        System.out.println("           - " + violation);
-                    }
-                }
-                if (!result.getWarnings().isEmpty()) {
-                    System.out.println("        ⚠️  Warnings:");
-                    for (String warning : result.getWarnings()) {
-                        System.out.println("           - " + warning);
-                    }
-                }
-            }
-        }
-
-        if (issueCount == 0) {
-            System.out.println("\n  ✅ All test cases follow the standard format!");
-        }
-    }
 
     /**
      * Preview how a test case would look in standard format
@@ -173,22 +132,111 @@ public class CleansingEngine {
     // ========== SUMMARY METHODS ==========
 
     private void printSummary(CleansingReport report) {
-        System.out.println("\n" + "=".repeat(50));
+        System.out.println("\n" + "=".repeat(60));
         System.out.println("📋 CLEANSING SUMMARY");
-        System.out.println("=".repeat(50));
+        System.out.println("=".repeat(60));
         System.out.println("✅ Total Test Cases: " + report.normalizedCount);
         System.out.println("🔄 Similar Pairs Found: " + (report.similarities != null ? report.similarities.size() : 0));
         System.out.println("🔴 Duplicates (>90%): " + report.duplicatesFound);
         System.out.println("📝 Merge Suggestions: " + (report.mergeSuggestions != null ? report.mergeSuggestions.size() : 0));
-        System.out.println("🔧 Standardized: " + report.standardizedCount);
 
-        System.out.println("\n🏷️  TEST CATEGORIZATION:");
-        System.out.println("  🔥 SMOKE Tests: " + report.categorized.getOrDefault(TestCoverageScore.TestType.SMOKE, new ArrayList<>()).size());
-        System.out.println("  🔄 REGRESSION Tests: " + report.categorized.getOrDefault(TestCoverageScore.TestType.REGRESSION, new ArrayList<>()).size());
-        System.out.println("  ✓ SANITY Tests: " + report.categorized.getOrDefault(TestCoverageScore.TestType.SANITY, new ArrayList<>()).size());
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("📊 SIMILARITY COLOR LEGEND");
+        System.out.println("=".repeat(60));
+        System.out.println("  🔴 RED:     90% - 100%  → DUPLICATE - Merge immediately");
+        System.out.println("  🟡 YELLOW:  70% - 89%   → HIGH SIMILARITY - Consider merging");
+        System.out.println("  🟢 GREEN:   50% - 69%   → MEDIUM SIMILARITY - Review for reuse");
+        System.out.println("  ⚪ WHITE:   40% - 49%   → LOW SIMILARITY - Keep separate");
+        System.out.println("  (Hidden):   Below 40%   → NOT SIMILAR - No action needed");
 
-        System.out.println("\n⏱️  Processing Time: " + report.processingTimeMs + " ms");
-        System.out.println("=".repeat(50));
+        // ========== ADD THIS SECTION - DETAILED SIMILARITY REPORT ==========
+        if (report.similarities != null && !report.similarities.isEmpty()) {
+            System.out.println("\n" + "=".repeat(60));
+            System.out.println("🔍 SIMILARITY REPORT (Top " + Math.min(20, report.similarities.size()) + ")");
+            System.out.println("=".repeat(60));
+
+            // Sort by similarity score (highest first)
+            report.similarities.sort((a, b) -> Double.compare(b.getSimilarityScore(), a.getSimilarityScore()));
+
+            int count = Math.min(20, report.similarities.size());
+            for (int i = 0; i < count; i++) {
+                SimilarityResult r = report.similarities.get(i);
+                double score = r.getSimilarityScore();
+
+                // Choose icon based on similarity score
+                String icon;
+                if (score >= 0.9) {
+                    icon = "🔴";
+                } else if (score >= 0.7) {
+                    icon = "🟡";
+                } else {
+                    icon = "🟢";
+                }
+
+                System.out.printf("\n  %s %s ↔ %s: %.1f%%%n",
+                        icon, r.getTestCase1().getId(), r.getTestCase2().getId(), score * 100);
+                System.out.printf("     📝 '%s'%n", truncateTitle(r.getTestCase1().getTitle(), 55));
+                System.out.printf("     📝 '%s'%n", truncateTitle(r.getTestCase2().getTitle(), 55));
+            }
+        }
+        // ========== END OF ADDED SECTION ==========
+
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("🏷️  TEST CATEGORIZATION DETAILS");
+        System.out.println("=".repeat(60));
+
+        // Get the categorized test cases
+        Map<TestCoverageScore.TestType, List<TestCase>> categorized = report.categorized;
+
+        // 1. SMOKE TESTS
+        List<TestCase> smokeTests = categorized.getOrDefault(TestCoverageScore.TestType.SMOKE, new ArrayList<>());
+        System.out.println("\n🔥 SMOKE TESTS (Critical - Run on every build): " + smokeTests.size() + " test(s)");
+        System.out.println("-".repeat(58));
+        if (!smokeTests.isEmpty()) {
+            for (int i = 0; i < smokeTests.size(); i++) {
+                TestCase tc = smokeTests.get(i);
+                System.out.printf("  %d. %s: %s%n", (i+1), tc.getId(), truncateTitle(tc.getTitle(), 50));
+            }
+        } else {
+            System.out.println("  No smoke tests found");
+        }
+
+        // 2. REGRESSION TESTS
+        List<TestCase> regressionTests = categorized.getOrDefault(TestCoverageScore.TestType.REGRESSION, new ArrayList<>());
+        System.out.println("\n🔄 REGRESSION TESTS (Run on major changes): " + regressionTests.size() + " test(s)");
+        System.out.println("-".repeat(58));
+        if (!regressionTests.isEmpty()) {
+            for (int i = 0; i < regressionTests.size(); i++) {
+                TestCase tc = regressionTests.get(i);
+                System.out.printf("  %d. %s: %s%n", (i+1), tc.getId(), truncateTitle(tc.getTitle(), 50));
+            }
+        } else {
+            System.out.println("  No regression tests found");
+        }
+
+        // 3. SANITY TESTS
+        List<TestCase> sanityTests = categorized.getOrDefault(TestCoverageScore.TestType.SANITY, new ArrayList<>());
+        System.out.println("\n✓ SANITY TESTS (Basic validation - Run as needed): " + sanityTests.size() + " test(s)");
+        System.out.println("-".repeat(58));
+        if (!sanityTests.isEmpty()) {
+            for (int i = 0; i < sanityTests.size(); i++) {
+                TestCase tc = sanityTests.get(i);
+                System.out.printf("  %d. %s: %s%n", (i+1), tc.getId(), truncateTitle(tc.getTitle(), 50));
+            }
+        } else {
+            System.out.println("  No sanity tests found");
+        }
+
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("⏱️  Processing Time: " + report.processingTimeMs + " ms");
+        System.out.println("=".repeat(60));
+    }
+
+    // Helper method to truncate long titles
+    private String truncateTitle(String title, int maxLength) {
+        if (title == null) return "";
+        if (title.length() <= maxLength) return title;
+        return title.substring(0, maxLength - 3) + "...";
     }
 
 
